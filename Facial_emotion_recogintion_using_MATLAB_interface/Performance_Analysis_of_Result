@@ -1,0 +1,61 @@
+%% Performance Analysis
+
+imds = imageDatastore('emotions', ...
+    'IncludeSubfolders',true, ...
+    'LabelSource','foldernames');
+YTest=imds.Labels;
+
+%% Load Trained Network Model
+
+load Face_AlexNet_Train
+
+L= netTransfer.Layers(1,1);
+inputSize=L(1).InputSize;
+
+augimdsValidation = augmentedImageDatastore(inputSize(1:2),imds);
+
+%% Emotions Detection
+
+[YPred,scores] = classify(netTransfer,augimdsValidation);
+
+%% Performance Analysis
+
+figure,
+plotconfusion(YTest,YPred)
+
+pause(1);
+
+[c_matrix,Result,RefereceResult]= confusionpre.getMatrix(uint8(YTest),uint8(YPred));
+
+Accuracy=Result.Accuracy;
+acc=Accuracy*100
+Precision=Result.Precision;
+pre=Precision*100
+Sensitivity=Result.Sensitivity;
+sen=Sensitivity*100
+Specificity=Result.Specificity;
+spec=Specificity*100
+F_score=Result.F1_score;
+fscore=F_score*100
+
+PM=[acc pre sen spec fscore];
+f = figure('name','Performance Analysis','Position',[500 400 400 260]);
+cnames = {'Performance in %'};
+rnames={'Accuracy','Precision','Sensitivity','Specificity','F_Score'};
+t = uitable('Parent',f,'Data',PM','ColumnName',cnames, 'RowName',rnames,... 
+               'Position',[30 90 300 120]); 
+pause(1);
+
+figure,
+Z=[acc pre sen spec fscore];
+str={'Accuracy','Precision','Sensitivity','Specificity','F Score'};
+bar(Z,0.25,'b');
+set(gca, 'XTickLabel',str, 'XTick',1:numel(str));
+ylabel('Detected Result(%)');
+title('Performance Analysis for Facial Based Emotions Detection');
+accu =mean(YPred==YTest)
+ac=accu*100
+disp(ac)
+pause(1);
+
+msgbox('Completed')
